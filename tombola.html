@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎄 Tombola SQL - La Smorfia Informatica</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(to bottom, #991b1b, #14532d);
+            padding: 1rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            margin-bottom: 0.25rem;
+        }
+
+        .subtitle {
+            color: #a7f3d0;
+            font-size: 0.875rem;
+        }
+
+        .pdf-link {
+            display: inline-block;
+            margin-top: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            transition: background 0.2s;
+        }
+
+        .pdf-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: bold;
+            color: white;
+            border: none;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        button:disabled {
+            background: #6b7280;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-extract {
+            background: #059669;
+        }
+
+        .btn-extract:hover:not(:disabled) {
+            background: #047857;
+        }
+
+        .btn-solution {
+            background: #f59e0b;
+        }
+
+        .btn-solution:hover:not(:disabled) {
+            background: #d97706;
+        }
+
+        .btn-reset {
+            background: #dc2626;
+        }
+
+        .btn-reset:hover {
+            background: #b91c1c;
+        }
+
+        .query-box {
+            background: #0f172a;
+            border: 2px solid #10b981;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .query-type {
+            color: #34d399;
+            font-size: 0.75rem;
+            font-family: monospace;
+            margin-bottom: 0.25rem;
+        }
+
+        .query-text {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 1.1rem;
+            color: #6ee7b7;
+            min-height: 3rem;
+            display: flex;
+            align-items: center;
+            word-break: break-all;
+        }
+
+        .query-text.placeholder {
+            color: #64748b;
+            font-style: italic;
+        }
+
+        .result-box {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .result-inner {
+            display: inline-block;
+            background: white;
+            border-radius: 0.75rem;
+            padding: 0.75rem 2rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .result-label {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #374151;
+        }
+
+        .result-number {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #cbd5e1;
+            transition: color 0.3s;
+        }
+
+        .result-number.revealed {
+            color: #dc2626;
+        }
+
+        .board {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 0.75rem;
+            padding: 0.75rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .board-row {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+            margin-bottom: 4px;
+        }
+
+        .cell {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 0.5rem;
+            border: 2px solid #6ee7b7;
+            background: #d1fae5;
+            color: #065f46;
+            transition: all 0.3s;
+        }
+
+        .cell.extracted {
+            background: #10b981;
+            color: white;
+            border-color: #047857;
+        }
+
+        .cell.current {
+            background: #ef4444;
+            color: white;
+            border-color: #b91c1c;
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.5);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.8;
+            }
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 1rem;
+            color: rgba(167, 243, 208, 0.6);
+            font-size: 0.75rem;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.75rem;
+            }
+
+            .cell {
+                width: 32px;
+                height: 32px;
+                font-size: 0.8rem;
+            }
+
+            .query-text {
+                font-size: 0.9rem;
+            }
+
+            button {
+                padding: 0.5rem 1rem;
+                font-size: 0.875rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🎄 Tombola SQL 🎄</h1>
+            <p class="subtitle">La Smorfia Informatica — <span id="remaining">90</span> numeri rimasti</p>
+            <a href="LINK_PDF_TABELLE.pdf" class="pdf-link" target="_blank">📄 Scarica le tabelle da stampare (PDF)</a>
+        </header>
+
+        <div class="controls">
+            <button class="btn-extract" id="btnExtract" onclick="extractQuery()">🎲 Estrai Query</button>
+            <button class="btn-solution" id="btnSolution" onclick="revealSolution()" disabled>💡 Mostra
+                Soluzione</button>
+            <button class="btn-reset" onclick="resetGame()">🔄 Reset</button>
+        </div>
+
+        <div class="query-box">
+            <div class="query-type" id="queryType">[In attesa...]</div>
+            <div class="query-text placeholder" id="queryText">Premi "Estrai Query" per iniziare</div>
+        </div>
+
+        <div class="result-box">
+            <div class="result-inner">
+                <span class="result-label">Risultato: </span>
+                <span class="result-number" id="resultNumber">?</span>
+            </div>
+        </div>
+
+        <div class="board" id="board"></div>
+
+        <footer>Buon Natale e buon SQL! 🎅</footer>
+    </div>
+
+    <script>
+        const queries = [
+            { numero: 1, query: "SELECT MIN(numero) FROM simboli WHERE categoria_id = 6", tipo: "MIN" },
+            { numero: 2, query: "SELECT COUNT(*) FROM simboli WHERE categoria_id = 2", tipo: "COUNT" },
+            { numero: 3, query: "SELECT MIN(numero) FROM simboli, categorie WHERE simboli.categoria_id = categorie.id AND categorie.nome = 'Hardware'", tipo: "MIN" },
+            { numero: 4, query: "SELECT numero FROM simboli WHERE nome = 'Il Monitor'", tipo: "SELECT+WHERE" },
+            { numero: 5, query: "SELECT numero FROM simboli WHERE nome = 'La Tastiera'", tipo: "SELECT+WHERE" },
+            { numero: 6, query: "SELECT numero FROM simboli WHERE nome = 'Il Mouse'", tipo: "SELECT+WHERE" },
+            { numero: 7, query: "SELECT COUNT(*) FROM simboli WHERE categoria_id = 9", tipo: "COUNT" },
+            { numero: 8, query: "SELECT SUM(impatto) FROM eventi WHERE mese = 1", tipo: "SUM" },
+            { numero: 9, query: "SELECT MIN(numero) FROM simboli, categorie WHERE simboli.categoria_id = categorie.id AND categorie.nome = 'Storage'", tipo: "MIN" },
+            { numero: 10, query: "SELECT COUNT(*) FROM simboli WHERE categoria_id = 5", tipo: "COUNT" },
+            { numero: 11, query: "SELECT COUNT(*) FROM simboli WHERE categoria_id = 1", tipo: "COUNT" },
+            { numero: 12, query: "SELECT MIN(numero) FROM simboli, categorie WHERE simboli.categoria_id = categorie.id AND categorie.nome = 'Sicurezza'", tipo: "MIN" },
+            { numero: 13, query: "SELECT numero FROM simboli WHERE nome = 'Il Bug'", tipo: "SELECT+WHERE" },
+            { numero: 14, query: "SELECT SUM(impatto) FROM eventi WHERE mese = 10", tipo: "SUM" },
+            { numero: 15, query: "SELECT SUM(impatto) FROM eventi WHERE mese = 7", tipo: "SUM" },
+            { numero: 16, query: "SELECT COUNT(*) FROM simboli WHERE livello = 1", tipo: "COUNT" },
+            { numero: 17, query: "SELECT COUNT(*) FROM simboli WHERE livello = 4", tipo: "COUNT" },
+            { numero: 18, query: "SELECT SUM(impatto) FROM eventi WHERE mese = 3", tipo: "SUM" },
+            { numero: 19, query: "SELECT MIN(numero) FROM simboli, categorie WHERE simboli.categoria_id = categorie.id AND categorie.nome = 'Database'", tipo: "MIN" },
+            { numero: 20, query: "SELECT numero FROM simboli WHERE nome = 'La Tabella'", tipo: "SELECT+WHERE" },
+            { numero: 21, query: "SELECT numero FROM simboli WHERE nome = 'Il Record'", tipo: "SELECT+WHERE" },
+            { numero: 22, query: "SELECT numero FROM simboli WHERE nome = 'Il Campo'", tipo: "SELECT+WHERE" },
+            { numero: 23, query: "SELECT SUM(impatto) FROM eventi WHERE mese = 4", tipo: "SUM" },
+            { numero: 24, query: "SELECT COUNT(*) FROM simboli WHERE livello = 3", tipo: "COUNT" },
+            { numero: 25, query: "SELECT numero FROM simboli WHERE nome = 'Il JOIN'", tipo: "SELECT+WHERE" },
+            { numero: 26, query: "SELECT COUNT(*) FROM simboli WHERE livello = 2", tipo: "COUNT" },
+            { numero: 27, query: "SELECT numero FROM simboli WHERE nome = 'Il WHERE'", tipo: "SELECT+WHERE" },
+            { numero: 28, query: "SELECT MAX(numero) FROM simboli, categorie WHERE simboli.categoria_id = categorie.id AND categorie.nome = 'Database'", tipo: "MAX" },
+            { numero: 29, query: "SELECT SUM(impatto) FROM eventi WHERE mese = 12", tipo: "SUM" },
+            { numero: 30, query: "SELECT numero FROM simboli WHERE nome = 'La Funzione'", tipo: "SELECT+WHERE" },
+            { numero: 31, query: "SELECT numero FROM simboli WHERE nome = 'Il Ciclo For'", tipo: "SELECT+WHERE" },
+            { numero: 32, query: "SELECT numero FROM simboli WHERE nome = 'Il While'", tipo: "SELECT+WHERE" },
+            { numero: 33, query: "SELECT SUM(impatto) FROM eventi WHERE mese = 11", tipo: "SUM" },
+            { numero: 34, query: "SELECT numero FROM simboli WHERE nome = 'La Stringa'", tipo: "SELECT+WHERE" },
+            { numero: 35, query: "SELECT numero FROM simboli WHERE nome = 'Il Puntatore'", tipo: "SELECT+WHERE" },
+            { numero: 36, query: "SELECT numero FROM simboli WHERE nome = 'La Classe'", tipo: "SELECT+WHERE" },
+            { numero: 37, query: "SELECT numero FROM simboli WHERE nome = 'L\\'Oggetto'", tipo: "SELECT+WHERE" },
+            { numero: 38, query: "SELECT numero FROM simboli WHERE nome = 'Il Metodo'", tipo: "SELECT+WHERE" },
+            { numero: 39, query: "SELECT numero FROM simboli WHERE nome = 'L\\'Ereditarietà'", tipo: "SELECT+WHERE" },
+            { numero: 40, query: "SELECT MAX(numero) FROM simboli WHERE categoria_id = 6", tipo: "MAX" },
+            { numero: 41, query: "SELECT MIN(numero) FROM simboli, categorie WHERE simboli.categoria_id = categorie.id AND categorie.nome = 'Web'", tipo: "MIN" },
+            { numero: 42, query: "SELECT SUM(impatto) FROM eventi WHERE simbolo_numero = 13", tipo: "SUM" },
+            { numero: 43, query: "SELECT numero FROM simboli WHERE nome = 'JavaScript'", tipo: "SELECT+WHERE" },
+            { numero: 44, query: "SELECT numero FROM simboli WHERE nome = 'Il Browser'", tipo: "SELECT+WHERE" },
+            { numero: 45, query: "SELECT numero FROM simboli WHERE nome = 'Il Cookie'", tipo: "SELECT+WHERE" },
+            { numero: 46, query: "SELECT numero FROM simboli WHERE nome = 'La Session'", tipo: "SELECT+WHERE" },
+            { numero: 47, query: "SELECT numero FROM simboli WHERE nome = 'L\\'API'", tipo: "SELECT+WHERE" },
+            { numero: 48, query: "SELECT numero FROM simboli WHERE nome = 'Il JSON'", tipo: "SELECT+WHERE" },
+            { numero: 49, query: "SELECT numero FROM simboli WHERE nome = 'Il Dominio'", tipo: "SELECT+WHERE" },
+            { numero: 50, query: "SELECT MAX(numero) FROM simboli, categorie WHERE simboli.categoria_id = categorie.id AND categorie.nome = 'Web'", tipo: "MAX" },
+            { numero: 51, query: "SELECT numero FROM simboli WHERE nome = 'Il Protocollo HTTP'", tipo: "SELECT+WHERE" },
+            { numero: 52, query: "SELECT numero FROM simboli WHERE nome = 'Il DNS'", tipo: "SELECT+WHERE" },
+            { numero: 53, query: "SELECT numero FROM simboli WHERE nome = 'L\\'IP Address'", tipo: "SELECT+WHERE" },
+            { numero: 54, query: "SELECT numero FROM simboli WHERE nome = 'La Subnet Mask'", tipo: "SELECT+WHERE" },
+            { numero: 55, query: "SELECT numero FROM simboli WHERE nome = 'Il Gateway'", tipo: "SELECT+WHERE" },
+            { numero: 56, query: "SELECT SUM(impatto) FROM eventi WHERE simbolo_numero = 68", tipo: "SUM" },
+            { numero: 57, query: "SELECT numero FROM simboli WHERE nome = 'La VLAN'", tipo: "SELECT+WHERE" },
+            { numero: 58, query: "SELECT MAX(numero) FROM simboli, categorie WHERE simboli.categoria_id = categorie.id AND categorie.nome = 'Rete'", tipo: "MAX" },
+            { numero: 59, query: "SELECT numero FROM simboli WHERE nome = 'La VPN'", tipo: "SELECT+WHERE" },
+            { numero: 60, query: "SELECT numero FROM simboli WHERE nome = 'La Crittografia'", tipo: "SELECT+WHERE" },
+            { numero: 61, query: "SELECT numero FROM simboli WHERE nome = 'L\\'Hash'", tipo: "SELECT+WHERE" },
+            { numero: 62, query: "SELECT numero FROM simboli WHERE nome = 'Il Certificato SSL'", tipo: "SELECT+WHERE" },
+            { numero: 63, query: "SELECT numero FROM simboli WHERE nome = 'La Password'", tipo: "SELECT+WHERE" },
+            { numero: 64, query: "SELECT numero FROM simboli WHERE nome = 'Il Token'", tipo: "SELECT+WHERE" },
+            { numero: 65, query: "SELECT numero FROM simboli WHERE nome = 'L\\'Autenticazione'", tipo: "SELECT+WHERE" },
+            { numero: 66, query: "SELECT numero FROM simboli WHERE nome = 'Il Malware'", tipo: "SELECT+WHERE" },
+            { numero: 67, query: "SELECT numero FROM simboli WHERE nome = 'Il Phishing'", tipo: "SELECT+WHERE" },
+            { numero: 68, query: "SELECT MAX(numero) FROM simboli, categorie WHERE simboli.categoria_id = categorie.id AND categorie.nome = 'Sicurezza'", tipo: "MAX" },
+            { numero: 69, query: "SELECT MIN(numero) FROM simboli, categorie WHERE simboli.categoria_id = categorie.id AND categorie.nome = 'Sistema'", tipo: "MIN" },
+            { numero: 70, query: "SELECT numero FROM simboli WHERE nome = 'Il Kernel'", tipo: "SELECT+WHERE" },
+            { numero: 71, query: "SELECT numero FROM simboli WHERE nome = 'Il Processo'", tipo: "SELECT+WHERE" },
+            { numero: 72, query: "SELECT numero FROM simboli WHERE nome = 'Il Thread'", tipo: "SELECT+WHERE" },
+            { numero: 73, query: "SELECT numero FROM simboli WHERE nome = 'La Memoria Virtuale'", tipo: "SELECT+WHERE" },
+            { numero: 74, query: "SELECT numero FROM simboli WHERE nome = 'Il File System'", tipo: "SELECT+WHERE" },
+            { numero: 75, query: "SELECT SUM(impatto) FROM eventi WHERE simbolo_numero = 15", tipo: "SUM" },
+            { numero: 76, query: "SELECT numero FROM simboli WHERE nome = 'Il BIOS'", tipo: "SELECT+WHERE" },
+            { numero: 77, query: "SELECT numero FROM simboli WHERE nome = 'Il Boot'", tipo: "SELECT+WHERE" },
+            { numero: 78, query: "SELECT numero FROM simboli WHERE nome = 'Il Terminale'", tipo: "SELECT+WHERE" },
+            { numero: 79, query: "SELECT MAX(numero) FROM simboli, categorie WHERE simboli.categoria_id = categorie.id AND categorie.nome = 'Sistema'", tipo: "MAX" },
+            { numero: 80, query: "SELECT numero FROM simboli WHERE nome = 'La GPU'", tipo: "SELECT+WHERE" },
+            { numero: 81, query: "SELECT numero FROM simboli WHERE nome = 'La Scheda Madre'", tipo: "SELECT+WHERE" },
+            { numero: 82, query: "SELECT numero FROM simboli WHERE nome = 'L\\'Alimentatore'", tipo: "SELECT+WHERE" },
+            { numero: 83, query: "SELECT numero FROM simboli WHERE nome = 'Il Case'", tipo: "SELECT+WHERE" },
+            { numero: 84, query: "SELECT MAX(numero) FROM simboli, categorie WHERE simboli.categoria_id = categorie.id AND categorie.nome = 'Hardware'", tipo: "MAX" },
+            { numero: 85, query: "SELECT numero FROM simboli WHERE nome = 'Il RAID'", tipo: "SELECT+WHERE" },
+            { numero: 86, query: "SELECT numero FROM simboli WHERE nome = 'Il NAS'", tipo: "SELECT+WHERE" },
+            { numero: 87, query: "SELECT numero FROM simboli WHERE nome = 'L\\'Hard Disk'", tipo: "SELECT+WHERE" },
+            { numero: 88, query: "SELECT MAX(numero) FROM simboli, categorie WHERE simboli.categoria_id = categorie.id AND categorie.nome = 'Storage'", tipo: "MAX" },
+            { numero: 89, query: "SELECT MIN(numero) FROM simboli, categorie WHERE simboli.categoria_id = categorie.id AND categorie.nome = 'Software'", tipo: "MIN" },
+            { numero: 90, query: "SELECT MAX(numero) FROM simboli", tipo: "MAX" }
+        ];
+        let remainingQueries = [...queries];
+        let extractedNumbers = new Set();
+        let currentQuery = null;
+        let solutionRevealed = false;
+
+        function initBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+
+            for (let row = 0; row < 9; row++) {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'board-row';
+
+                for (let col = 0; col < 10; col++) {
+                    const num = row * 10 + col + 1;
+                    if (num <= 90) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.id = `cell-${num}`;
+                        cell.textContent = num;
+                        rowDiv.appendChild(cell);
+                    }
+                }
+                board.appendChild(rowDiv);
+            }
+        }
+
+        function updateBoard() {
+            for (let i = 1; i <= 90; i++) {
+                const cell = document.getElementById(`cell-${i}`);
+                cell.className = 'cell';
+
+                if (solutionRevealed && currentQuery && currentQuery.numero === i) {
+                    cell.classList.add('current');
+                } else if (extractedNumbers.has(i)) {
+                    cell.classList.add('extracted');
+                }
+            }
+        }
+
+        function extractQuery() {
+            if (remainingQueries.length === 0) return;
+
+            const randomIndex = Math.floor(Math.random() * remainingQueries.length);
+            currentQuery = remainingQueries[randomIndex];
+            remainingQueries = remainingQueries.filter((_, i) => i !== randomIndex);
+            solutionRevealed = false;
+
+            document.getElementById('queryType').textContent = `[${currentQuery.tipo}]`;
+            document.getElementById('queryText').textContent = currentQuery.query;
+            document.getElementById('queryText').className = 'query-text';
+            document.getElementById('resultNumber').textContent = '?';
+            document.getElementById('resultNumber').className = 'result-number';
+            document.getElementById('remaining').textContent = remainingQueries.length;
+
+            document.getElementById('btnSolution').disabled = false;
+            if (remainingQueries.length === 0) {
+                document.getElementById('btnExtract').disabled = true;
+            }
+
+            updateBoard();
+        }
+
+        function revealSolution() {
+            if (!currentQuery || solutionRevealed) return;
+
+            solutionRevealed = true;
+            extractedNumbers.add(currentQuery.numero);
+
+            document.getElementById('resultNumber').textContent = currentQuery.numero;
+            document.getElementById('resultNumber').className = 'result-number revealed';
+            document.getElementById('btnSolution').disabled = true;
+
+            updateBoard();
+        }
+
+        function resetGame() {
+            remainingQueries = [...queries];
+            extractedNumbers = new Set();
+            currentQuery = null;
+            solutionRevealed = false;
+
+            document.getElementById('queryType').textContent = '[In attesa...]';
+            document.getElementById('queryText').textContent = 'Premi "Estrai Query" per iniziare';
+            document.getElementById('queryText').className = 'query-text placeholder';
+            document.getElementById('resultNumber').textContent = '?';
+            document.getElementById('resultNumber').className = 'result-number';
+            document.getElementById('remaining').textContent = '90';
+
+            document.getElementById('btnExtract').disabled = false;
+            document.getElementById('btnSolution').disabled = true;
+
+            updateBoard();
+        }
+
+        // Inizializza
+        initBoard();
+    </script>
+</body>
+
+</html>
