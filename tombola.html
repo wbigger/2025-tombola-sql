@@ -236,6 +236,20 @@
             font-size: 0.75rem;
         }
 
+        /* Migliora il contrasto del link nel footer per accessibilità */
+        footer a {
+            color: #ffffff;
+            text-decoration: underline;
+            font-weight: 600;
+        }
+
+        footer a:hover,
+        footer a:focus {
+            color: #f0fdf4;
+            outline: none;
+            text-decoration-thickness: 2px;
+        }
+
         @media (max-width: 600px) {
             h1 {
                 font-size: 1.75rem;
@@ -288,7 +302,7 @@
 
         <div class="board" id="board"></div>
 
-        <footer>Buon Natale e buon SQL! 🎅</footer>
+        <footer>Buon Natale e buon SQL! 🎅 - <a href="https://github.com/wbigger/2025-tombola-sql.git ">Progetto Github</a></footer>
     </div>
 
     <script>
